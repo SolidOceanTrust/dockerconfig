@@ -77,3 +77,13 @@ services:
       - 9002:8080
     volumes:
       - ${ROOT}:/scm
+
+  nodered:
+    image: nodered/node-red:latest
+    container_name: nodered
+    ports:
+      - "1880:1880"
+    volumes:
+      - ${ROOT}/nodered:/data
+    environment:
+      - TZ=America/New_York

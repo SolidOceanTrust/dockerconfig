@@ -1,0 +1,79 @@
+version: '3.7'
+services:
+  homeassistant:
+    image: homeassistant/home-assistant:latest
+    container_name: ha
+    restart: unless-stopped
+    ports:
+      - "8123:8123"
+    environment:
+      - PUID=${USERID}
+      - PGID=${GROUPID}
+    volumes:
+      - ${ROOT}/ha:/config
+      - ${ROOT}/ha/share:/share
+      - ${ROOT}/ha/ssl:/ssl
+      - /etc/localtime:/etc/localtime:ro
+    network_mode: host
+    privileged: true
+    depends_on:
+      - mqtt
+      - esphome
+
+# touch mosquitt.conf, create username/pass using mosquitto_passwd -b (inline)
+  mqtt:
+   image: eclipse-mosquitto
+   restart: unless-stopped
+   container_name: mqtt
+   volumes:
+     - ${ROOT}/mqtt/config/mqtt.conf:/mosquitto/config/mosquitto.conf
+     - ${ROOT}/mqtt/log:/mosquitto/log
+     - ${ROOT}/mqtt/data:/mosquitto/data
+     - /etc/localtime:/etc/localtime:ro
+   ports:
+     - "1883:1883"
+     - "9001:9001"
+
+  esphome:
+    image: esphome/esphome
+    container_name: esphome
+    network_mode: host
+    ports:
+      - "6052:6052"
+      - "6123:6123"
+    restart: unless-stopped
+    volumes:
+      - ${ROOT}/esphome/config:/config:rw
+      - /etc/localtime:/etc/localtime:ro
+    command: config/ dashboard
+
+  ddns:
+    image: oznu/cloudflare-ddns:latest
+    container_name: ddns
+    restart: always
+    environment:
+      - EMAIL=${CLOUDFLARE_EMAIL}
+      - API_KEY=${CLOUDFLARE_API_KEY}
+      - ZONE=${CLOUDFLARE_ZONE}
+      - SUBDOMAIN=${CLOUDFLARE_SUBDOMAIN}
+      - PROXIED=false
+
+  portainer:
+    image: portainer/portainer
+    container_name: portainer
+    ports:
+      - "9000:9000"
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${ROOT}/portainer:/data
+
+  ide:
+    image: codercom/code-server
+    container_name: ide
+    command: --auth none
+    restart: unless-stopped
+    ports:
+      - 9002:8080
+    volumes:
+      - ${ROOT}:/scm

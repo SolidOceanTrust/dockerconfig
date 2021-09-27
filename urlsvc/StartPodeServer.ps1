@@ -1,6 +1,6 @@
 Start-PodeServer {
 
-    Add-PodeEndpoint -Address localhost -Port 8080 -Protocol Http
+    Add-PodeEndpoint -Address * -Port 8080 -Protocol Http
 
     Add-PodeRoute -Method Get -Path '/' -ScriptBlock {
         # Import SiteList into Memory
